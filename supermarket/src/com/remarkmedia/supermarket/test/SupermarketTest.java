@@ -3,20 +3,9 @@
  */
 package com.remarkmedia.supermarket.test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import junit.framework.Assert;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.remarkmedia.supermarket.main.Cashier;
-import com.remarkmedia.supermarket.main.Customer;
-import com.remarkmedia.supermarket.main.Good;
 import com.remarkmedia.supermarket.main.Supermarket;
 
 
@@ -28,14 +17,12 @@ import com.remarkmedia.supermarket.main.Supermarket;
  */
 public class SupermarketTest {
 	private static Supermarket supermarket;
-	private static ScheduledExecutorService executor;
 	@BeforeClass
 	public static void testInitGoods(){
 		supermarket = new Supermarket("onepiece");
 		supermarket.initGoods("Apple",15);
 		supermarket.initGoods("Macbook",15);
 		supermarket.initGoods("Cookie",15);
-		executor = Executors.newScheduledThreadPool(5);
 	}
 	@Test
 	public void testGetRandomGood(){
@@ -52,20 +39,7 @@ public class SupermarketTest {
 	@Test 
 	public void testStatInfo()throws Exception{
 		Supermarket market = new Supermarket("onepiece");
-		Cashier cashier = new Cashier("testCasiher",market,executor);
-		Customer cust = new Customer("testCust");
-		Good good = new Good("Apple");
-		good.setInitTime(System.currentTimeMillis());
-		cust.setInitTime(System.currentTimeMillis());
-		TimeUnit.SECONDS.sleep(1);
-		cust.setHandleTime(System.currentTimeMillis());
-		TimeUnit.SECONDS.sleep(1);
-		good.setSellTime(System.currentTimeMillis());
-		cust.setGood(good);
-		cashier.getReceiveList().add(cust);
-		List<Cashier> list = new ArrayList<Cashier>();
-		list.add(cashier);
-		market.setCashierList(list);
+		market.initSupermarket();
 		market.statInfo();
 	}
 	@Test

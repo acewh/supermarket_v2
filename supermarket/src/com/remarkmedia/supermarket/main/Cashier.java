@@ -2,8 +2,7 @@ package com.remarkmedia.supermarket.main;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +23,7 @@ public class Cashier implements Runnable{
 	/**
 	 * customer line of the cashier(each cashier holds a line can reduece race)
 	 */
-	private BlockingQueue<Customer> customerLine;
+	private ConcurrentLinkedQueue<Customer> customerLine;
 	/**
 	 * the supermarket which cashier belongs to
 	 */
@@ -32,25 +31,16 @@ public class Cashier implements Runnable{
 	private final ScheduledExecutorService executorService;
 	public Cashier(String _name,Supermarket _supermarket,ScheduledExecutorService _executorService){
 		receiveList = new ArrayList<Customer>();
-		customerLine = new LinkedBlockingQueue<Customer>();
+		customerLine = new ConcurrentLinkedQueue<Customer>();
 		this.executorService = _executorService;
 		this.supermarket=_supermarket;
 		this.name = _name;
-	}
-	public List<Customer> getReceiveList() {
-		return receiveList;
-	}
+	}	
 	public String getName() {
 		return name;
 	}
-	public void setName(String name) {
-		this.name = name;
-	}	
-	public BlockingQueue<Customer> getCustomerLine() {
-		return customerLine;
-	}
-	public void setCustomerLine(BlockingQueue<Customer> customerLine) {
-		this.customerLine = customerLine;
+	public void addCustomer(Customer customer){	
+		customerLine.offer(customer);
 	}
 	@Override
 	public void run() {
@@ -68,7 +58,7 @@ public class Cashier implements Runnable{
 	 * handle a customer request
 	 * @param cust
 	 */
-	public void handleCustomer(Customer cust){		
+	public void handleCustomer(Customer cust){
 		cust.getGood().setSellTime(System.currentTimeMillis());
 		cust.setHandleTime(System.currentTimeMillis());		
 		receiveList.add(cust);
@@ -79,6 +69,35 @@ public class Cashier implements Runnable{
 	 * @return
 	 */
 	public boolean isFinish(){
-		return supermarket.isSoldOut&&customerLine.size()==0;
+		return supermarket.isSoldOut()&&customerLine.isEmpty();
+	}
+	/**
+	 * get customer total wait time
+	 * @return
+	 */
+	public long getCustTotalWait(){
+		long custWait = 0;
+		for(Customer cust:receiveList){
+			custWait+=cust.getWaitTime();			
+		}
+		return custWait;
+	}
+	/**
+	 * get good total sold time
+	 * @return
+	 */
+	public long getGoodTotalWait(){
+		long goodWait = 0;
+		for(Customer cust:receiveList){
+			goodWait+=cust.getGood().getSoldTime();
+		}
+		return goodWait;
+	}
+	/**
+	 * get size of receiveList 
+	 * @return
+	 */
+	public int getCustSize(){
+		return receiveList.size();
 	}
 }

@@ -25,7 +25,7 @@ public class Good {
 		return initTime;
 	}
 	/**
-	 * 设置商品的入库时间
+	 * set the init time
 	 * @param initTime
 	 */
 	public void setInitTime(long initTime) {

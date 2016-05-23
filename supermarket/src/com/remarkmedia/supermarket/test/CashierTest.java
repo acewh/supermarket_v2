@@ -1,14 +1,10 @@
 package com.remarkmedia.supermarket.test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
 import junit.framework.Assert;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import com.remarkmedia.supermarket.main.Cashier;
 import com.remarkmedia.supermarket.main.Customer;
 import com.remarkmedia.supermarket.main.Good;
@@ -32,16 +28,39 @@ public class CashierTest {
 		cust.setGood(new Good("Apple"));
 		Cashier cashier = new Cashier("testCashier",supermarket,executor);
 		cashier.handleCustomer(cust);
-		Assert.assertEquals(cashier.getReceiveList().size(),1);
+		Assert.assertEquals(cashier.getCustSize(),1);
 	}
 	@Test
 	public void testRun()throws Exception{
 		Supermarket supermarket = new Supermarket("test");
 		Customer cust = new Customer("testCust");
 		cust.setGood(new Good("Apple"));
-		supermarket.setSoldOut(true);
-		CountDownLatch latch = new CountDownLatch(1);
 		Cashier cashier = new Cashier("testCashier",supermarket,executor);
+		cashier.addCustomer(cust);
 		cashier.run();
+	}
+	@Test
+	public void getCustWaitTime(){
+		Supermarket supermarket = new Supermarket("test");
+		Customer cust = new Customer("testCust");
+		cust.setGood(new Good("Apple"));
+		Cashier cashier = new Cashier("testCashier",supermarket,executor);
+		cashier.getCustTotalWait();
+	}
+	@Test
+	public void getGoodWaitTime(){
+		Supermarket supermarket = new Supermarket("test");
+		Customer cust = new Customer("testCust");
+		cust.setGood(new Good("Apple"));
+		Cashier cashier = new Cashier("testCashier",supermarket,executor);
+		cashier.getGoodTotalWait();
+	}
+	public void getCustSize(){
+		Supermarket supermarket = new Supermarket("test");
+		Customer cust = new Customer("testCust");
+		cust.setGood(new Good("Apple"));
+		Cashier cashier = new Cashier("testCashier",supermarket,executor);
+		cashier.getCustTotalWait();
+		cashier.getCustSize();
 	}
 }

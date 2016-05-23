@@ -24,7 +24,7 @@ public class Supermarket implements Runnable{
 	private int statInterval=5;//business statistic interval default value 5
 	public Supermarket(String _name){
 		this.name = _name;
-	}		
+	}
 	/**
 	 * goods repository
 	 */
@@ -38,7 +38,11 @@ public class Supermarket implements Runnable{
 	 */
 	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);
 	private Random rand = new Random();
-	protected volatile boolean isSoldOut = false;
+	private volatile boolean isSoldOut = false;
+	/**
+	 * customer index
+	 */
+	private int customerIndex;
 	/**
 	 * start the supermarket
 	 */
@@ -47,12 +51,11 @@ public class Supermarket implements Runnable{
 		initSupermarket();
 		//start business
 		startBusinessTime = System.currentTimeMillis();				
-		CustomerGenerator custGenerator = new CustomerGenerator(this,executor);		
-		executor.schedule(custGenerator,getCustomerDelay(),TimeUnit.SECONDS);		
+		generateCustomer();		
 		for(Cashier cashier:cashierList){
 			executor.schedule(cashier,getCashierDelay(),TimeUnit.SECONDS);
 		}
-		executor.schedule(this,getStatInterval(),TimeUnit.SECONDS);
+		executor.schedule(this,statInterval,TimeUnit.SECONDS);
 	}
 	/**
 	 * initialize the supermarket
@@ -81,13 +84,34 @@ public class Supermarket implements Runnable{
 		if(!isClose()){
 			//print the statistics			
 			statInfo();
-			executor.schedule(this,getStatInterval(),TimeUnit.SECONDS);
+			executor.schedule(this,statInterval,TimeUnit.SECONDS);
 		}else{
 			long endBusinessTime = System.currentTimeMillis();
-			logger.info("The Total Business Time of Supermarket is :"+(endBusinessTime-getStartBusinessTime())/1000+" Seconds!");			
+			logger.info("The Total Business Time of Supermarket is :"+(endBusinessTime-startBusinessTime)/1000+" Seconds!");			
 			statInfo();
 			executor.shutdown();
 		}
+	}	
+	/**
+	 * generate customer in 1 or 3 second
+	 */
+	private void generateCustomer(){
+		executor.schedule(new Runnable() {			
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				Good good = getRandomGood();
+				if(good!=null){
+					customerIndex++;
+					Customer cust = new Customer("Customer"+customerIndex);			
+					cust.setInitTime(System.currentTimeMillis());//set the start waiting time
+					cust.setGood(good);
+					getRandomCashier().addCustomer(cust);
+					logger.info(cust.getName()+" coming!!,buys a:"+cust.getGood().getName());
+					executor.schedule(this, getCustomerDelay(),TimeUnit.SECONDS);
+				}
+			}
+		}, getCustomerDelay(),TimeUnit.SECONDS);
 	}
 	/**
 	 * init goods
@@ -132,6 +156,14 @@ public class Supermarket implements Runnable{
 		}
 	}	
 	/**
+	 * customer wait in line randomly
+	 * @return
+	 */
+	private Cashier getRandomCashier(){
+		int randomIndex = rand.nextInt(cashierList.size());
+		return cashierList.get(randomIndex);
+	}
+	/**
 	 * stat business info
 	 */
 	public void statInfo(){
@@ -139,12 +171,10 @@ public class Supermarket implements Runnable{
 		long goodWait = 0;
 		int custSize = 0;
 		for(Cashier cashier:cashierList){
-			custSize +=cashier.getReceiveList().size();
-			logger.info("The Number of Customers "+cashier.getName()+" Received is:"+cashier.getReceiveList().size());
-			for(Customer cust:cashier.getReceiveList()){
-				custWait+=cust.getWaitTime();
-				goodWait+=cust.getGood().getSoldTime();
-			}
+			custSize +=cashier.getCustSize();
+			logger.info("The Number of Customers "+cashier.getName()+" Received is:"+cashier.getCustSize());
+			custWait+=cashier.getCustTotalWait();
+			goodWait+=cashier.getGoodTotalWait();
 		}		
 		if(custSize!=0){
 			logger.info("The Average Wait Time Of Each Customer:"+custWait/custSize/1000+" Seconds");
@@ -167,6 +197,9 @@ public class Supermarket implements Runnable{
 		int delay = rand.nextInt(6)+5;
 		return delay;
 	}
+	public boolean isSoldOut(){
+		return isSoldOut;
+	}
 	/**
 	 * judge whether supermarket is closed
 	 * @return
@@ -180,26 +213,5 @@ public class Supermarket implements Runnable{
 			}
 		}
 		return isClose;
-	}	
-	public void setSoldOut(boolean isSoldOut) {
-		this.isSoldOut = isSoldOut;
-	}
-	public List<Cashier> getCashierList() {
-		return cashierList;
-	}
-	public void setCashierList(List<Cashier> cashierList) {
-		this.cashierList = cashierList;
-	}
-	public long getStartBusinessTime() {
-		return startBusinessTime;
-	}
-	public void setStartBusinessTime(long startBusinessTime) {
-		this.startBusinessTime = startBusinessTime;
-	}	 
-	public int getStatInterval() {
-		return statInterval;
-	}
-	public void setStatInterval(int statInterval) {
-		this.statInterval = statInterval;
-	}	
+	}		
 }
